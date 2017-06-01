@@ -6,13 +6,14 @@ import (
 	"errors"
 	"io/ioutil"
 	"net"
+	"unsafe"
 )
 
 var (
 	ErrInvalidIp  = errors.New("invalid ip")
 	ErrIpNotFound = errors.New("ip not found")
-
-	field_drt = []byte("\t")
+	field_drt     = []byte("\t")
+	cacheIndex    = [65536]uint32{}
 )
 
 const (
@@ -58,7 +59,7 @@ func newLocationInfo(b []byte) *LocationInfo {
 }
 
 type Ipip struct {
-	offset uint32
+	offset int
 	index  []byte
 	binary []byte
 }
@@ -70,47 +71,60 @@ func NewIpip() *Ipip {
 }
 
 func (p *Ipip) Load(path string) error {
-	b, err := ioutil.ReadFile(path)
+	all, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	p.binary = b
-	p.offset = binary.BigEndian.Uint32(b[:4])
-	p.index = b[4:p.offset]
+
+	for i := 0; i < 256; i++ {
+		for j := 0; j < 256; j++ {
+			k := i*256 + j
+			cacheIndex[k] = binary.LittleEndian.Uint32(all[(k+1)*4 : (k+1)*4+4])
+		}
+	}
+
+	p.binary = all
+	p.offset = int(binary.BigEndian.Uint32(all[:4]))
+	p.index = make([]byte, p.offset-4)
+	copy(p.index, all[4:p.offset-4])
 	return nil
 }
 
-func (p *Ipip) Find(ipstr string) (*LocationInfo, error) {
+func (p *Ipip) Find(ipstr string) (string, error) {
 	ip := net.ParseIP(ipstr).To4()
 	if ip == nil {
-		return nil, ErrInvalidIp
+		return na, ErrInvalidIp
 	}
-
-	tmp_offset := uint32(ip[0]) * 4
-	start := binary.LittleEndian.Uint32(p.index[tmp_offset : tmp_offset+4])
-
 	nip := binary.BigEndian.Uint32(ip)
-	var index_offset uint32 = 0
-	var index_length uint32 = 0
-	var max_comp_len uint32 = p.offset - 1028
-	start = start*8 + 1024
+	var prefix = int(ip[0])*256 + int(ip[1])
+	var start = int(cacheIndex[prefix])
+	var maxValue = p.offset - 262144 - 4
+	var b = make([]byte, 4)
+	var indexOffset = -1
+	var indexLength = -1
 
-	for start < max_comp_len {
-		n := binary.BigEndian.Uint32(p.index[start : start+4])
-		if n >= nip {
-			tmp_index := []byte{0, 0, 0, 0}
-			copy(tmp_index, p.index[start+4:start+7])
-			index_offset = binary.LittleEndian.Uint32(tmp_index)
-			index_length = uint32(p.index[start+7])
+	for start = start*9 + 262144; start < maxValue; start += 9 {
+		tmpInt := binary.BigEndian.Uint32(p.index[start : start+4])
+		if tmpInt >= nip {
+			b[1] = p.index[start+6]
+			b[2] = p.index[start+5]
+			b[3] = p.index[start+4]
+
+			indexOffset = int(binary.BigEndian.Uint32(b))
+			indexLength = 0xFF&int(p.index[start+7])<<8 + 0xFF&int(p.index[start+8])
 			break
 		}
-		start += 8
 	}
 
-	if index_offset == 0 {
-		return nil, ErrIpNotFound
+	if indexOffset == -1 || indexLength == -1 {
+		return na, ErrIpNotFound
 	}
+	var area = make([]byte, indexLength)
+	indexOffset = int(p.offset) + indexOffset - 262144
+	copy(area, p.binary[indexOffset:indexOffset+indexLength])
+	return bytes2str(area), nil
+}
 
-	res_offset := p.offset + index_offset - 1024
-	return newLocationInfo(p.binary[res_offset : res_offset+index_length]), nil
+func bytes2str(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
