@@ -10,7 +10,7 @@ import (
 
 const (
 	LISTEN_PORT string = ":8085"
-	DATA_FILE   string = "E:/mygo/src/github.com/liuxiaozhen/ipip-go/data/mydata4vipday2.datx"
+	DATA_FILE   string = "E:/mygo/data/mydata4vipday2.datx"
 )
 
 var (
