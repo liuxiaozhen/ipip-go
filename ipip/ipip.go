@@ -1,7 +1,6 @@
 package ipip
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"io/ioutil"
@@ -12,7 +11,7 @@ import (
 var (
 	ErrInvalidIp  = errors.New("invalid ip")
 	ErrIpNotFound = errors.New("ip not found")
-	field_drt     = []byte("\t")
+	field_drt     = string("\t")
 	cacheIndex    = [65536]uint32{}
 )
 
@@ -20,57 +19,19 @@ const (
 	na = "N/A"
 )
 
-type LocationInfo struct {
-	Country string
-	Region  string
-	City    string
-	Isp     string
-}
-
-func newLocationInfo(b []byte) *LocationInfo {
-	info := &LocationInfo{
-		Country: na,
-		Region:  na,
-		City:    na,
-		Isp:     na,
-	}
-
-	fields := bytes.Split(b, field_drt)
-
-	switch len(fields) {
-	case 4:
-		// free version
-		info.Country = string(fields[0])
-		info.Region = string(fields[1])
-		info.City = string(fields[2])
-
-	case 5:
-		// pay version
-		info.Country = string(fields[0])
-		info.Region = string(fields[1])
-		info.City = string(fields[2])
-		info.Isp = string(fields[4])
-
-	default:
-		panic("unknow ip info:" + string(b))
-	}
-
-	return info
-}
-
-type Ipip struct {
+type Ipipx struct {
 	offset int
 	index  []byte
 	binary []byte
 }
 
-func NewIpip() *Ipip {
-	return &Ipip{
+func NewIpipx() *Ipipx {
+	return &Ipipx{
 		offset: 0,
 	}
 }
 
-func (p *Ipip) Load(path string) error {
+func (p *Ipipx) Load(path string) error {
 	all, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -90,7 +51,7 @@ func (p *Ipip) Load(path string) error {
 	return nil
 }
 
-func (p *Ipip) Find(ipstr string) (string, error) {
+func (p *Ipipx) Find(ipstr string) (string, error) {
 	ip := net.ParseIP(ipstr).To4()
 	if ip == nil {
 		return na, ErrInvalidIp
