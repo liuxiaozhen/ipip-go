@@ -45,7 +45,7 @@ func (p *IpipX) Load(path string) error {
 
 func (p *IpipX) Find(ipstr string) (string, error) {
 	ip := net.ParseIP(ipstr).To4()
-	if ip == nil {
+	if ip == nil || ip.To4() == nil {
 		return na, ErrInvalidIp
 	}
 	nip := binary.BigEndian.Uint32(ip)

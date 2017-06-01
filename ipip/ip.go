@@ -31,8 +31,8 @@ func (p *Ipip) Load(path string) error {
 
 func (p *Ipip) Find(ipstr string) (string, error) {
 	ip := net.ParseIP(ipstr).To4()
-	if ip == nil {
-		return na, ErrInvalidIp
+	if ip == nil || ip.To4() == nil {
+		return "", ErrInvalidIp
 	}
 
 	tmp_offset := uint32(ip[0]) * 4
@@ -57,7 +57,7 @@ func (p *Ipip) Find(ipstr string) (string, error) {
 	}
 
 	if index_offset == 0 {
-		return na, ErrIpNotFound
+		return "", ErrIpNotFound
 	}
 
 	res_offset := p.offset + index_offset - 1024
