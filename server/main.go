@@ -29,5 +29,5 @@ func main() {
 		}
 		w.Write([]byte(ipinfo))
 	})
-	http.ListenAndServe(":8085", nil)
+	http.ListenAndServe(LISTEN_PORT, nil)
 }
