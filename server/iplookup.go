@@ -38,8 +38,7 @@ func main() {
 	oip.Load(DATA_FILE)
 
 	if err != nil {
-		log.Println("Oops, some error occurred!")
-		log.Println(err)
+		log.Fatalln("load data error | " + err.Error())
 		return
 	}
 
