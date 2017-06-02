@@ -2,36 +2,28 @@ package ipip
 
 import (
 	"encoding/binary"
-	"errors"
 	"io/ioutil"
 	"net"
-	"unsafe"
 )
 
 var (
-	ErrInvalidIp  = errors.New("invalid ip")
-	ErrIpNotFound = errors.New("ip not found")
-	field_drt     = string("\t")
-	cacheIndex    = [65536]uint32{}
+	field_drt  = string("\t")
+	cacheIndex = [65536]uint32{}
 )
 
-const (
-	na = "N/A"
-)
-
-type Ipipx struct {
+type IpipX struct {
 	offset int
 	index  []byte
 	binary []byte
 }
 
-func NewIpipx() *Ipipx {
-	return &Ipipx{
+func NewIpipX() *IpipX {
+	return &IpipX{
 		offset: 0,
 	}
 }
 
-func (p *Ipipx) Load(path string) error {
+func (p *IpipX) Load(path string) error {
 	all, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -51,9 +43,9 @@ func (p *Ipipx) Load(path string) error {
 	return nil
 }
 
-func (p *Ipipx) Find(ipstr string) (string, error) {
+func (p *IpipX) Find(ipstr string) (string, error) {
 	ip := net.ParseIP(ipstr).To4()
-	if ip == nil {
+	if ip == nil || ip.To4() == nil {
 		return na, ErrInvalidIp
 	}
 	nip := binary.BigEndian.Uint32(ip)
@@ -84,8 +76,4 @@ func (p *Ipipx) Find(ipstr string) (string, error) {
 	indexOffset = int(p.offset) + indexOffset - 262144
 	copy(area, p.binary[indexOffset:indexOffset+indexLength])
 	return bytes2str(area), nil
-}
-
-func bytes2str(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
 }

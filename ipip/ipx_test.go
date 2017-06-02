@@ -5,18 +5,18 @@ import (
 )
 
 var (
-	ipfile = "E:/mygo/src/github.com/liuxiaozhen/ipip-go/data/mydata4vipday2.datx"
+	ipfile = "E:/mygo/data/mydata4vipday2.datx"
 )
 
 func Test_Load(t *testing.T) {
-	p := NewIpip()
+	p := NewIpipX()
 	if err := p.Load(ipfile); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func Test_Find(t *testing.T) {
-	p := NewIpip()
+	p := NewIpipX()
 	if err := p.Load(ipfile); err != nil {
 		t.Fatal(err)
 	}
