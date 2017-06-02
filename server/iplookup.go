@@ -19,11 +19,6 @@ var (
 	oip *ipip.IpipX
 )
 
-func logdebug(str string) {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.LUTC)
-	log.Println(str)
-}
-
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	logFile, err := os.Create(LOG_FILE)
